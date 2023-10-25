@@ -1,6 +1,8 @@
+#include "configs.h"
+#include "LCDPORTD.h"
 #include <xc.h>
-#include "config.h"
-#include "LCD_PORTD.h"
+#include <pic18f4550.h>
+
 
 #define PWM_FREQ 2500
 #define PWM1_out TRISCbits.RC2
@@ -10,9 +12,11 @@
 
 #define IN 1
 #define OUT 0
+#define LINE_DOWN 1
+#define LINE_UP 0
 
-void configADC (char CHANNELS);
-unsigned int analogRead (char canal);
+unsigned int analogRead(char canal);
+void configADC(char CHANNELS);
 void configPWM1 (void);
 void configPWM2 (void);
 void configPWM3 (void);
@@ -34,9 +38,9 @@ void main(void) {
     unsigned int lec1;
     unsigned int lec2;
     unsigned int lec3;
-    unsigned int percent1;
-    unsigned int percent2;
-    unsigned int percent3;
+    double percent1;
+    double percent2;
+    double percent3;
     configPWM1();
     configPWM2();
     configPWM3();
@@ -56,8 +60,8 @@ void main(void) {
         
         MoveCursor(0,LINE_DOWN); 
         percent1= 100.0*lec1/1023.0;
-        percent2= 100.0*lec1/1023.0;
-        percent3= 100.0*lec1/1023.0;
+        percent2= 100.0*lec2/1023.0;
+        percent3= 100.0*lec3/1023.0;
         LCDint(percent1);
         LCDchar('%');
         LCDchar(' ');
@@ -70,37 +74,41 @@ void main(void) {
         LCDprint(9,"        ",0);
         setDC1(percent1);
         setDC2(percent2);
+        setDC3(percent3);
         __delay_ms(400);
     }
     return;
 }
 
-unsigned int analogRead(char canal){
-     ADCON0 = 1+canal*4;
-     ADCON0bits.GO_DONE = 1; //start conversion
-     while(ADCON0bits.GO_DONE == 1) {
-          //wait for conversion to finish
-      }
-     char lowbits = ADRESL; //read results
-     char highbits = ADRESH;
-     unsigned int adresult = highbits*256+ lowbits;
-     return adresult;
+void configADC(char CHANNELS){
+    char allchannelsoff = 0x0F;
+    ADCON1 = (allchannelsoff-CHANNELS);
+    ADCON2 = 0x80;
+    ADCON0bits.ADON = 1;
 }
 
-void configADC(char CHANNELS){
-     char allchannelsoff = 0x0F;
-     ADCON1 = (allchannelsoff-CHANNELS);
-     ADCON2 = 0x80; //Right justified
-     ADCON0bits.ADON = 1; //Turn on AD Port;
+unsigned int analogRead(char canal){
+    ADCON0 = 1+canal*4;
+    ADCON0bits.GO_DONE = 1;
+    while(ADCON0bits.GO_DONE == 1){
+        
+    }
+    char lowbits = ADRESL;
+    char highbits = ADRESH;
+    unsigned int adresult = highbits*256+lowbits;
+    return adresult;
 }
 
 
 void configPWM1(){
     PWM1_out = OUT;
     PR2 =_XTAL_FREQ/(4.0*PWM_FREQ*16.0)-1;
+    //CCPR1L = 0b01111101; //DC (1 ms)00
+    //CCP1CONbits.DC1B0=0;
+    //CCP1CONbits.DC1B1=0; //<5:4>=<00>
     setDC1(50);
-    T2CON = 0b00000111;
-    CCP1CON = 0b00001100;
+    T2CON = 0b00000111; //T2 ON, <1:0>prescaler = 16
+    CCP1CON = 0b00001100; //<5:4>=<00> PWM mode
     return;
 }
 
@@ -118,7 +126,7 @@ void configPWM3 (){
     INTCONbits.T0IE = 1;
     INTCONbits.GIE = 1;
     T0CON = 0b00001000;
-    CCP2CON = 0b00001100; //Precarga = 65535 - DC*400; //(50Hz)
+    //CCP2CON = 0b00001100; //Precarga = 65535 - DC*400; //(50Hz)
     HiLo = 0;
     PWM3_pin = HiLo; //genera la salida en el pin C0
     TMR0 = 45535; //DC 50%
