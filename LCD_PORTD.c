@@ -1,6 +1,10 @@
-#include "LCD_PORTD.h"
-//Funciones LCD
+#include "LCDPORTD.h"
+#include "xc.h"
+
 void iniLCD(){
+    TRISD=0;
+    TRISEbits.RE0 = 0;
+    TRISEbits.RE1 = 0;
     __delay_ms(20); //1. Esperar mas de 15ms
     LCDcommand(Set8); //2. Comando set 8 bits
     __delay_ms(5); //3. Esperar mas de 4.1ms
@@ -34,9 +38,9 @@ void LCDchar(char a){
 
 void LCDprint(int size, char a[], int wait_ms){
     for(int i = 0; i<size; i++){
-        LCDchar(a[i]);
-        for(int j = 0; j<wait_ms; j++){
-            __delay_ms(1);
+    LCDchar(a[i]);
+    for(int j = 0; j<wait_ms; j++){
+    __delay_ms(1);
         }
     }
 }
@@ -46,7 +50,7 @@ void MoveCursor(char x, char y){
     if(y <= 1 && x <= 39){
         if(y ==0){
             a = x;
-        } else{
+         } else{
             a = x + 64;
         }
         a = a | SetDDRAM;
@@ -64,7 +68,7 @@ void MoveLCD(char dir, char inc){
         for(int i = 0; i < inc; i++){
             LCDcommand(DispSfL);
             __delay_ms(200);
-        }
+    }
     }else{
         for(int i = 0; i < inc; i++){
             LCDcommand(DispSfR);
@@ -85,20 +89,21 @@ void LCDint(int a){
     char C=0;
     char UM=0;
     char DM=0;
-    if(a < 0){
-        LCDchar('-');
-        a *= -1;
+    if (a < 0){
+        LCDchar("-");
+        a *=-1;
     }
     if(a < 10){
         U = a;
-        LCDchar('0'+U);
+        LCDchar("0"+U);
     }
     else{
-        if(a <100) {
+        if(a <100){
             U = a%10;
             D = ((a-U)/10)%10;
             LCDchar('0'+D);
             LCDchar('0'+U);
+            
         }else{
             if(a < 1000){
                 U = a%10;
@@ -107,7 +112,7 @@ void LCDint(int a){
                 LCDchar('0'+C);
                 LCDchar('0'+D);
                 LCDchar('0'+U);
-            }else{
+            }else {
                 if(a < 10000){
                     U = a%10;
                     D = ((a-U)/10)%10;
@@ -117,7 +122,7 @@ void LCDint(int a){
                     LCDchar('0'+C);
                     LCDchar('0'+D);
                     LCDchar('0'+U);
-                }else{
+                }else {
                     U = a%10;
                     D = ((a-U)/10)%10;
                     C = ((a-U-10*D)/100)%10;
@@ -131,5 +136,5 @@ void LCDint(int a){
                 }
             }
         }
-    } 
+    }
 }
